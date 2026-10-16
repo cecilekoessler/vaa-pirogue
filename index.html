@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="fr">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Va’a, la pirogue polynésienne</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Va’a, la pirogue polynésienne — dossier pédagogique de l’exposition virtuelle du musée du quai Branly, à feuilleter. Création graphique et DA : Cécile Koessler, Matavai Studio.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Barlow:wght@400;500&display=swap">
+<style>
+/* Layout : une scène plein cadre, le magazine centré, une barre de navigation discrète dessous. */
+:root{
+  --bg:#e9f1f1;          /* lagon pâle */
+  --ink:#10343a;         /* bleu-vert profond */
+  --muted:#5b7a7e;
+  --accent:#0f9aa8;      /* turquoise de la couverture */
+  --control:#ffffff;
+  --shadow:rgba(16,52,58,.22);
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0c2226;--ink:#e3f2f2;--muted:#8fb0b3;--accent:#3cc6d3;--control:#163a40;--shadow:rgba(0,0,0,.5);color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0c2226;--ink:#e3f2f2;--muted:#8fb0b3;--accent:#3cc6d3;--control:#163a40;--shadow:rgba(0,0,0,.5);color-scheme:dark}
+
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);
+  display:flex;flex-direction:column;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:12px;box-sizing:border-box;overflow:hidden}
+
+.stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+#book{filter:drop-shadow(0 18px 30px var(--shadow))}
+.page{background:#fff;overflow:hidden}
+.page img{width:100%;height:100%;object-fit:cover;display:block;user-select:none;-webkit-user-drag:none}
+
+.bar{display:flex;align-items:center;justify-content:center;gap:14px;padding-top:12px;flex-wrap:wrap}
+.bar button{font:500 15px/1 var(--body);color:var(--ink);background:var(--control);
+  border:1px solid color-mix(in srgb,var(--ink) 14%,transparent);border-radius:999px;
+  width:44px;height:44px;display:grid;place-items:center;cursor:pointer}
+.bar button:hover{border-color:var(--accent);color:var(--accent)}
+.bar button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.bar button:disabled{opacity:.35;cursor:default}
+.count{font:500 17px/1 var(--display);letter-spacing:.06em;font-variant-numeric:tabular-nums;min-width:96px;text-align:center}
+.credit{font:500 12px/1 var(--display);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-align:center;padding-top:8px}
+.hint{position:absolute;left:0;right:0;text-align:center;bottom:calc(84px + env(safe-area-inset-bottom,0px));
+  font-size:13px;color:var(--muted);pointer-events:none;transition:opacity .6s}
+@media (prefers-reduced-motion: reduce){.hint{transition:none}}
+</style>
+
+<div class="stage"><div id="book"></div></div>
+<p class="hint" id="hint">Cliquez ou faites glisser le coin des pages</p>
+<div class="bar">
+  <button id="first" aria-label="Couverture" title="Couverture">⇤</button>
+  <button id="prev" aria-label="Page précédente" title="Page précédente">←</button>
+  <span class="count" id="count">1 / 44</span>
+  <button id="next" aria-label="Page suivante" title="Page suivante">→</button>
+  <button id="last" aria-label="Dernière page" title="Dernière page">⇥</button>
+</div>
+<p class="credit">Va’a, la pirogue polynésienne — Dossier pédagogique, musée du quai Branly · Création graphique et DA Cécile Koessler · Matavai Studio</p>
+
+<script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.js"></script>
+<script>
+(function(){
+  var TOTAL = 20, W = 1034, H = 1462;            // taille des images de pages
+  var book = document.getElementById('book');
+  for (var i = 1; i <= TOTAL; i++){
+    var d = document.createElement('div');
+    d.className = 'page';
+    if (i === 1 || i === TOTAL) d.setAttribute('data-density','hard');
+    var img = document.createElement('img');
+    img.alt = 'Page ' + i;
+    img.dataset.src = 'pages/' + String(i).padStart(2,'0') + '.webp';
+    img.decoding = 'async';
+    d.appendChild(img); book.appendChild(d);
+  }
+  var imgs = book.querySelectorAll('img');
+  // Ne charge que les pages proches de celle affichée : le visiteur ne télécharge que ce qu'il regarde.
+  function load(around){
+    for (var k = Math.max(0, around - 3); k <= Math.min(TOTAL - 1, around + 5); k++){
+      var im = imgs[k]; if (!im.src) im.src = im.dataset.src;
+    }
+  }
+  load(0);
+
+  var pf = new St.PageFlip(book, {
+    width: 430, height: Math.round(430 * H / W),
+    size: 'stretch', minWidth: 240, maxWidth: 1034, minHeight: 308, maxHeight: 1462,
+    showCover: true, usePortrait: true, maxShadowOpacity: .35,
+    mobileScrollSupport: false, flippingTime: 800
+  });
+  pf.loadFromHTML(book.querySelectorAll('.page'));
+
+  var count = document.getElementById('count');
+  function update(){
+    var p = pf.getCurrentPageIndex();
+    load(p);
+    var portrait = pf.getOrientation() === 'portrait';
+    var label = (portrait || p === 0 || p === TOTAL - 1) ? (p + 1) : (p + 1) + '–' + (p + 2);
+    count.textContent = label + ' / ' + TOTAL;
+    document.getElementById('prev').disabled = document.getElementById('first').disabled = p === 0;
+    document.getElementById('next').disabled = document.getElementById('last').disabled = p >= TOTAL - (portrait ? 1 : 2);
+  }
+  pf.on('flip', function(){ update(); document.getElementById('hint').style.opacity = 0; });
+  pf.on('changeOrientation', update);
+  update();
+
+  document.getElementById('prev').onclick = function(){ pf.flipPrev(); };
+  document.getElementById('next').onclick = function(){ pf.flipNext(); };
+  document.getElementById('first').onclick = function(){ pf.turnToPage(0); update(); };
+  document.getElementById('last').onclick = function(){ pf.turnToPage(TOTAL - 1); update(); };
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'ArrowRight') pf.flipNext();
+    if (e.key === 'ArrowLeft') pf.flipPrev();
+  });
+  setTimeout(function(){ document.getElementById('hint').style.opacity = 0; }, 5000);
+})();
+</script>
